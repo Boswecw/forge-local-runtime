@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator, RefResolver
+from jsonschema import Draft202012Validator
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -19,19 +18,11 @@ def load_json(path: Path) -> Any:
         return json.load(f)
 
 
-def build_resolver(schema_path: Path, schema: dict[str, Any]) -> RefResolver:
-    return RefResolver(
-        base_uri=schema_path.resolve().as_uri(),
-        referrer=schema,
-    )
-
-
 def validate_file(instance_path: Path, schema_path: Path) -> list[str]:
     schema = load_json(schema_path)
     instance = load_json(instance_path)
 
-    resolver = build_resolver(schema_path, schema)
-    validator = Draft202012Validator(schema, resolver=resolver)
+    validator = Draft202012Validator(schema)
 
     errors = sorted(validator.iter_errors(instance), key=lambda e: list(e.path))
     messages: list[str] = []
@@ -44,8 +35,7 @@ def validate_file(instance_path: Path, schema_path: Path) -> list[str]:
 
 
 def expect_valid(instance_path: Path, schema_path: Path) -> list[str]:
-    errors = validate_file(instance_path, schema_path)
-    return errors
+    return validate_file(instance_path, schema_path)
 
 
 def expect_invalid(instance_path: Path, schema_path: Path) -> list[str]:
